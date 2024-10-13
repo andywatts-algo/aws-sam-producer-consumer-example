@@ -10,8 +10,10 @@ from importlib.resources import as_file, files
 from typing import Optional
 
 from rich import print as rich_print
-from tastytrade import Account, NestedFutureOptionChain, NestedOptionChain, Session, get_tasty_monthly
-from tastytrade.instruments import NestedOptionChainExpiration, NestedFutureOptionChainExpiration
+from tastytrade import API_URL
+from tastytrade.account import Account
+from tastytrade.instruments import NestedOptionChain, NestedOptionChainExpiration
+from tastytrade.session import Session
 from tastytrade.order import NewOrder, PlacedOrderResponse
 
 logger = logging.getLogger(__name__)
@@ -37,9 +39,10 @@ def test_order_handle_errors(
     session: 'RenewableSession',
     order: NewOrder
 ) -> Optional[PlacedOrderResponse]:
-    url = f'{session.base_url}/accounts/{account.account_number}/orders/dry-run'
+    url = f'{API_URL}/accounts/{account.account_number}/orders/dry-run'
     json = order.model_dump_json(exclude_none=True, by_alias=True)
-    response = session.client.post(url, data=json)
+    response = session.sync_client.post(url, data=json)
+
     # modified to use our error handling
     if response.status_code // 100 != 2:
         content = response.json()['error']
@@ -119,66 +122,5 @@ def is_monthly(day: date) -> bool:
 
 def round_to_width(x, base=Decimal(1)):
     return base * round(x / base)
-
-
-def choose_expiration(
-    chain: NestedOptionChain,
-    include_weeklies: bool = False
-) -> NestedOptionChainExpiration:
-    exps = [e for e in chain.expirations]
-    if not include_weeklies:
-        exps = [e for e in exps if is_monthly(e.expiration_date)]
-    exps.sort(key=lambda e: e.expiration_date)
-    default = get_tasty_monthly()
-    default_option = None
-    for i, exp in enumerate(exps):
-        if exp.expiration_date == default:
-            default_option = exp
-            print(f'{i + 1}) {exp.expiration_date} (default)')
-        else:
-            print(f'{i + 1}) {exp.expiration_date}')
-    choice = 0
-    while choice not in range(1, len(exps) + 1):
-        try:
-            raw = input('Please choose an expiration: ')
-            choice = int(raw)
-        except ValueError:
-            return default_option
-
-    return exps[choice - 1]
-
-
-def choose_futures_expiration(
-    chain: NestedFutureOptionChain,
-    include_weeklies: bool = False
-) -> NestedFutureOptionChainExpiration:
-    chain = chain.option_chains[0]
-    if include_weeklies:
-        exps = [e for e in chain.expirations]
-    else:
-        exps = [e for e in chain.expirations if e.expiration_type != 'Weekly']
-    exps.sort(key=lambda e: e.expiration_date)
-    # find closest to 45 DTE
-    default = min(exps, key=lambda e: abs(e.days_to_expiration - 45))
-    for i, exp in enumerate(exps):
-        if exp == default:
-            print(f'{i + 1}) {exp.expiration_date} [{exp.underlying_symbol}] (default)')
-        else:
-            print(f'{i + 1}) {exp.expiration_date} [{exp.underlying_symbol}]')
-    choice = 0
-    while choice not in range(1, len(exps) + 1):
-        try:
-            raw = input('Please choose an expiration: ')
-            choice = int(raw)
-        except ValueError:
-            return default
-
-    return exps[choice - 1]
-
-
-
-
-
-
 
 

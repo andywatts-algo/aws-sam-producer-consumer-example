@@ -2,39 +2,22 @@ from decimal import Decimal
 from typing import Optional
 from datetime import date, datetime
 
-import asyncclick as click
 from rich.console import Console
 from rich.table import Table
 from tastytrade import DXLinkStreamer
-from tastytrade.dxfeed import EventType
+from tastytrade.streamer import EventType
 from tastytrade.instruments import NestedOptionChain, Option
 from tastytrade.order import NewOrder, OrderAction, OrderTimeInForce, OrderType, PriceEffect
-import structlog
 import logging
 import json
 import os
 
-from src.listen import listen_greeks, listen_quotes
+from src.tastytrade.listen import listen_greeks, listen_quotes
 from ttcli.utils import ZERO, RenewableSession, round_to_width, test_order_handle_errors
 
 
-log_level_value = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO)
-structlog.configure(
-    wrapper_class=structlog.make_filtering_bound_logger(log_level_value),
-)
-log = structlog.get_logger()
+logger = logging.getLogger()
 
-
-@click.group(chain=True, help='Buy, sell, and analyze options.')
-async def option():
-    pass
-
-@option.command(help='Buy or sell puts with the given parameters.')
-@click.option('-d', '--delta', type=int, required=True, help='The chosen delta for the option.')
-@click.option('-w', '--width', type=int, help='Turns the order into a spread with the given width.')
-@click.option('--dte', type=int, required=True, help='Days to expiration for the option.')
-@click.argument('symbol', type=str)
-@click.argument('quantity', type=int)
 async def put(symbol: str, quantity: int, delta: int, dte: int, width: Optional[int] = None):
     sesh = RenewableSession()
     chain = NestedOptionChain.get_chain(sesh, symbol)
@@ -65,11 +48,11 @@ async def put(symbol: str, quantity: int, delta: int, dte: int, width: Optional[
         mid = round_to_width((bid + ask) / Decimal(2), tick_size)
 
         short_symbol = next(s.put for s in subchain.strikes if s.strike_price == strike)
-        log.debug("Option symbols", short_symbol=short_symbol, spread_strike_put=spread_strike.put if width else None)
+        logger.debug("Option symbols", short_symbol=short_symbol, spread_strike_put=spread_strike.put if width else None)
 
         if width:
             options = Option.get_options(sesh, [short_symbol, spread_strike.put])
-            log.debug("Retrieved options", options=options)
+            logger.debug("Retrieved options", options=options)
             if not options:
                 raise ValueError(f"No options found for symbols: {short_symbol}, {spread_strike.put}")
             options.sort(key=lambda x: x.strike_price, reverse=True)
@@ -134,8 +117,8 @@ async def put(symbol: str, quantity: int, delta: int, dte: int, width: Optional[
 
 
         # Print the JSON output
-        log.debug(json.dumps(order_details, indent=2, default=str))
+        logger.debug(json.dumps(order_details, indent=2, default=str))
 
         if data.warnings:
             for warning in data.warnings:
-                log.warning(warning.message)
+                logger.warning(warning.message)
