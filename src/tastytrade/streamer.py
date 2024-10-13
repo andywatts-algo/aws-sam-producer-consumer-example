@@ -41,7 +41,6 @@ STREAMER_URL = "wss://streamer.tastyworks.com"
 DXLINK_VERSION = "0.1-js/1.0.0-beta.4"
 T = TypeVar("T")
 
-
 class QuoteAlert(TastytradeJsonDataclass):
     """
     Dataclass that contains information about a quote alert

@@ -281,7 +281,7 @@ class PlacedOrder(TastytradeJsonDataclass):
     """
 
     account_number: str
-    id: int
+    id: Optional[int] = None
     time_in_force: OrderTimeInForce
     order_type: OrderType
     underlying_symbol: str

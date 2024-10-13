@@ -7,7 +7,7 @@ VAST_URL = "https://vast.tastyworks.com"
 VERSION = "9.0"
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # ruff: noqa: E402
 
