@@ -1,0 +1,7 @@
+requests
+httpx
+boto3
+pandas-market-calendars
+pytz
+pydantic
+websockets
