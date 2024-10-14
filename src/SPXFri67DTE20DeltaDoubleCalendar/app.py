@@ -12,29 +12,33 @@ from tastytrade.order import NewOrder, OrderAction, OrderTimeInForce, OrderType
 from tastytrade.session import Session
 from tastytrade.streamer import EventType
 from tastytrade.utils import PriceEffect
+import boto3
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-
-logger.setLevel(logging.INFO)
+dynamodb = boto3.resource('dynamodb')
+TABLE_NAME = 'OrdersTable' 
 
 SYMBOL = "SPX"
+STRATEGY = "Bull Put Spread"
 WIDTH = 20
+QUANTITY = -1
+
 
 def lambda_handler(event, context):
-    session = Session()
+    asyncio.run(main())
     
-    try:
-        result = asyncio.run(place_trade(event, context, session))
-        return { "statusCode": 200, "body": json.dumps("hello world") }
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        return { "statusCode": 500, "body": json.dumps(str(e)) }
+async def main():
+    session = Session()
+    order = await build_order(session)
+    data = await validate_order(session, order)
+    log_order(order, data, SYMBOL, QUANTITY, WIDTH)
+    save_order_to_dynamodb(order, data)
+    return { "statusCode": 200 }
 
-
-
-async def place_trade(event, context, session):
+async def build_order(session) -> NewOrder:
     DTE = 1
     WIDTH = 20
     DELTA = 20
@@ -97,28 +101,28 @@ async def place_trade(event, context, session):
             price_effect=PriceEffect.CREDIT if QUANTITY < 0 else PriceEffect.DEBIT
         )
 
-        # Check order
-        accounts = Account.get_accounts(session)
-        account = accounts[0]
-        data = test_order_handle_errors(account, session, order)
-        # Log any warnings
-        if data.warnings:
-            for warning in data.warnings:
-                logger.warning(warning.message)
-        if data is None:
-            return
+        return order
 
-        log_trade(order, subchain, selected, data, SYMBOL, QUANTITY, WIDTH)
+async def validate_order(session, order):
+    accounts = Account.get_accounts(session)
+    account = accounts[0]
+    data = test_order_handle_errors(account, session, order)
+    # Log any warnings
+    if data.warnings:
+        for warning in data.warnings:
+            logger.warning(warning.message)
+    if data is None:
+        raise ValueError("Order validation failed")
+    return data
 
-    return 'Success'
-
-
-def log_trade(order, subchain, selected, data, SYMBOL, QUANTITY, WIDTH):
+def log_order(order, data, SYMBOL, QUANTITY, WIDTH):
     # Prepare the order details for serialization
     order_details = order.model_dump()
     
     # Construct the order name
-    expiration_date = datetime.strptime(str(subchain.expiration_date), "%Y-%m-%d")
+    def extract_date(symbol):
+        return symbol.split()[1][:6]
+    expiration_date = datetime.strptime(extract_date(order.legs[0].symbol), "%y%m%d")
     expiration_str = expiration_date.strftime("%b %d")
     def extract_strike(symbol):
         return symbol[-7:-3]
@@ -131,9 +135,8 @@ def log_trade(order, subchain, selected, data, SYMBOL, QUANTITY, WIDTH):
     order_details.update({
         "name": name,
         "symbol": SYMBOL,
-        "strategy": "put spread" if WIDTH else "naked put",
-        "expiration": str(subchain.expiration_date),
-        "delta": selected.delta,
+        "strategy": strategy,
+        "expiration": expiration_str,
         "buying_power_effect": data.buying_power_effect.change_in_buying_power,
         "fees": data.fee_calculation.total_fees,
         "width": WIDTH
@@ -141,3 +144,20 @@ def log_trade(order, subchain, selected, data, SYMBOL, QUANTITY, WIDTH):
 
     # Log the JSON output
     logger.info(json.dumps(order_details, indent=2, default=str))
+
+def save_order_to_dynamodb(order: NewOrder, data):
+    table = dynamodb.Table(TABLE_NAME)
+    try:
+        item = {
+            'order_id': str(order.id),
+            'price': str(order.price),
+            'legs': json.dumps([leg.model_dump() for leg in order.legs], default=str),
+            'fees': str(data.fee_calculation.total_fees),
+        }
+        
+        response = table.put_item(Item=item)
+        logger.info(f"Order saved to DynamoDB: {item['order_id']}")
+    except ClientError as e:
+        logger.error(f"Error saving order to DynamoDB: {e.response['Error']['Message']}")
+    except Exception as e:
+        logger.error(f"Unexpected error saving order to DynamoDB: {str(e)}")

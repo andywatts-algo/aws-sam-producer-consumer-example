@@ -6,3 +6,4 @@ pytz
 pydantic
 websockets
 rich
+aiohttp

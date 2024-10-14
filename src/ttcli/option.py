@@ -12,7 +12,7 @@ import logging
 import json
 import os
 
-from src.tastytrade.listen import listen_greeks, listen_quotes
+from tastytrade.listen import listen_greeks, listen_quotes
 from ttcli.utils import ZERO, RenewableSession, round_to_width, test_order_handle_errors
 
 

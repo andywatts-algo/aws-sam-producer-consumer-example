@@ -1,40 +1,49 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  SPXFri67DTEDoubleCalendar
-
-Globals:
-  Function:
-    Timeout: 10
-    MemorySize: 128
+Description: Main stack with EventBridge rule
 
 Resources:
-  SPXFri67DTEDoubleCalendarFunction:
-    Type: AWS::Serverless::Function
+  SPXFri67DTE20DeltaDoubleCalendarStack:
+    Type: AWS::Serverless::Application
     Properties:
-      CodeUri: src/
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
-      Events:
-        ScheduledEvent:
-          Type: Schedule
-          Properties:
-            Schedule: 'cron(50 15 ? * FRI *)'
-            Name: SPXFri67DTEDoubleCalendarSchedule
-            Description: SPXFri67DTEDoubleCalendar
-      Environment:
-      Policies:
-        - SSMParameterReadPolicy:
-            ParameterName: /tastytrade/credentials
-        - SSMParameterReadWritePolicy:
-            ParameterName: /tastytrade/session_data
+      Location: src/SPXFri67DTE20DeltaDoubleCalendar/template.yaml
+
+  OptionStratStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: src/OptionStrat/template.yaml
+
+
+  SPXFri67DTE20DeltaDoubleCalendarToOptionStratRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.lambda
+        detail-type:
+          - "Lambda Function Invocation Result - Success"
+        detail:
+          requestContext:
+            functionArn:
+              - !GetAtt SPXFri67DTE20DeltaDoubleCalendarStack.Outputs.FunctionArn
+      State: DISABLED
+      Targets:
+        - Arn: !GetAtt OptionStratStack.Outputs.FunctionArn
+          Id: "OptionStratTarget"
+          InputPath: "$.detail.responsePayload"
+
+  OptionStratInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt OptionStratStack.Outputs.FunctionArn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt SPXFri67DTE20DeltaDoubleCalendarToOptionStratRule.Arn
 
 Outputs:
-  SPXFri67DTEDoubleCalendarFunction:
-    Description: "SPXFri67DTEDoubleCalendar Lambda Function ARN"
-    Value: !GetAtt SPXFri67DTEDoubleCalendarFunction.Arn
-  SPXFri67DTEDoubleCalendarFunctionIamRole:
-    Description: "Implicit IAM Role created for SPXFri67DTEDoubleCalendar function"
-    Value: !GetAtt SPXFri67DTEDoubleCalendarFunctionRole.Arn
+  SPXFri67DTE20DeltaDoubleCalendarArn:
+    Description: "SPXFri67DTE20DeltaDoubleCalendar ARN"
+    Value: !GetAtt SPXFri67DTE20DeltaDoubleCalendarStack.Outputs.FunctionArn
+  OptionStratArn:
+    Description: "OptionStrat ARN"
+    Value: !GetAtt OptionStratStack.Outputs.FunctionArn

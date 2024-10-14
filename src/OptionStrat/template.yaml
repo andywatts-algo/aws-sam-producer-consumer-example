@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  OptionStrat
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  OptionStratFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: orders
+
+Outputs:
+  OptionStratFunction:
+    Description: "OptionStrat Lambda Function ARN"
+    Value: !GetAtt OptionStratFunction.Arn
+  OptionStratFunctionIamRole:
+    Description: "Implicit IAM Role created for OptionStrat function"
+    Value: !GetAtt OptionStratFunctionRole.Arn

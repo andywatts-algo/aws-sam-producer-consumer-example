@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from src import app
+from src.SPXFri67DTEDoubleCalendar import app
 
 
 @pytest.fixture()
