@@ -1,11 +1,11 @@
 import httpx
+from typing import Any, Dict, List, Optional, Union
 import json
 import boto3
 import logging
 
 from tastytrade import API_URL
 from tastytrade.utils import validate_response
-
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +49,6 @@ class Session:
         else:
             logger.info("using cached session data")
 
-
-
-
     def _full_init(self, credentials):
         logger.debug("starting full initialization")
         body = {
@@ -94,3 +91,14 @@ class Session:
         validate_response(response)
         return response.json()["data"]
 
+    def _delete(self, url, **kwargs) -> None:
+        response = self.sync_client.delete(url, **kwargs)
+        validate_response(response)
+
+    def _post(self, url, **kwargs) -> Dict[str, Any]:
+        response = self.sync_client.post(url, **kwargs)
+        return self._validate_and_parse(response)
+
+    def _validate_and_parse(self, response: httpx._models.Response) -> Dict[str, Any]:
+        validate_response(response)
+        return response.json()["data"]

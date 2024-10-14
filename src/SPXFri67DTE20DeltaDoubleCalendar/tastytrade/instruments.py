@@ -681,7 +681,7 @@ class NestedOptionChain(TastytradeJsonDataclass):
         """
         symbol = symbol.replace("/", "%2F")
         data = session._get(f"/option-chains/{symbol}/nested")
-        return cls(**data["items"][0])
+        return cls(**data["items"][0])  # Thankfully [0] is SPXW.  [1] is SPX
 
 
 class FutureProduct(TastytradeJsonDataclass):
