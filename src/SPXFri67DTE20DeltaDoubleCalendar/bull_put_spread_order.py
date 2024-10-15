@@ -11,7 +11,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class ExtendedNewOrder(NewOrder):
+class BullPutSpreadOrder(NewOrder):
 
     def to_dict(self):
         return self.dict()
@@ -29,7 +29,7 @@ class ExtendedNewOrder(NewOrder):
         return data
 
     @classmethod
-    async def create(cls, session, SYMBOL, DTE, DELTA, WIDTH, QUANTITY):
+    async def new(cls, session, SYMBOL, DTE, DELTA, WIDTH, QUANTITY):
         chain = NestedOptionChain.get_chain(session, SYMBOL)
         subchain = min(chain.expirations, key=lambda e: abs((e.expiration_date - date.today()).days - DTE))
         tick_size = chain.tick_sizes[0].value
