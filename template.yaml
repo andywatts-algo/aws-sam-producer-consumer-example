@@ -1,49 +1,44 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Main stack with EventBridge rule
+Description: Bots
 
 Resources:
-  SPXFri67DTE20DeltaDoubleCalendarStack:
-    Type: AWS::Serverless::Application
+  StateMachine:
+    Type: AWS::Serverless::StateMachine
     Properties:
-      Location: src/SPXFri67DTE20DeltaDoubleCalendar/template.yaml
-
-  OptionStratStack:
-    Type: AWS::Serverless::Application
+      DefinitionSubstitutions:
+        ProducerArn: !GetAtt Producer.Arn
+        ConsumerArn: !GetAtt Consumer.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref Producer
+        - LambdaInvokePolicy:
+            FunctionName: !Ref Consumer
+      DefinitionUri: statemachine.asl.json
+  Consumer:
+    Type: AWS::Serverless::Function
     Properties:
-      Location: src/OptionStrat/template.yaml
-
-
-  SPXFri67DTE20DeltaDoubleCalendarToOptionStratRule:
-    Type: AWS::Events::Rule
+      CodeUri: functions/consumer/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+  Producer:
+    Type: AWS::Serverless::Function
     Properties:
-      EventPattern:
-        source:
-          - aws.lambda
-        detail-type:
-          - "Lambda Function Invocation Result - Success"
-        detail:
-          requestContext:
-            functionArn:
-              - !GetAtt SPXFri67DTE20DeltaDoubleCalendarStack.Outputs.FunctionArn
-      State: DISABLED
-      Targets:
-        - Arn: !GetAtt OptionStratStack.Outputs.FunctionArn
-          Id: "OptionStratTarget"
-          InputPath: "$.detail.responsePayload"
-
-  OptionStratInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !GetAtt OptionStratStack.Outputs.FunctionArn
-      Action: lambda:InvokeFunction
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt SPXFri67DTE20DeltaDoubleCalendarToOptionStratRule.Arn
+      CodeUri: functions/producer/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
 
 Outputs:
-  SPXFri67DTE20DeltaDoubleCalendarArn:
-    Description: "SPXFri67DTE20DeltaDoubleCalendar ARN"
-    Value: !GetAtt SPXFri67DTE20DeltaDoubleCalendarStack.Outputs.FunctionArn
-  OptionStratArn:
-    Description: "OptionStrat ARN"
-    Value: !GetAtt OptionStratStack.Outputs.FunctionArn
+  StateMachineArn:
+    Description: State Machine ARN
+    Value: !GetAtt StateMachine.Arn
+  ConsumerArn:
+    Description: Consumer ARN
+    Value: !GetAtt Consumer.Arn
+  ProducerArn:
+    Description: Producer ARN
+    Value: !GetAtt Producer.Arn

@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SPXFri67DTE20DeltaDoubleCalendar
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  SPXFri67DTE20DeltaDoubleCalendarFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        ScheduledEvent:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(50 15 ? * FRI *)'
+            Name: SPXFri67DTE20DeltaDoubleCalendarSchedule
+            Description: SPXFri67DTE20DeltaDoubleCalendar
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: /tastytrade/credentials
+        - SSMParameterReadWritePolicy:
+            ParameterName: /tastytrade/session_data
+        - DynamoDBCrudPolicy:
+            TableName: orders
+
+Outputs:
+  SPXFri67DTE20DeltaDoubleCalendarFunction:
+    Description: "SPXFri67DTE20DeltaDoubleCalendar Lambda Function ARN"
+    Value: !GetAtt SPXFri67DTE20DeltaDoubleCalendarFunction.Arn
+  SPXFri67DTE20DeltaDoubleCalendarFunctionIamRole:
+    Description: "Implicit IAM Role created for SPXFri67DTE20DeltaDoubleCalendar function"
+    Value: !GetAtt SPXFri67DTE20DeltaDoubleCalendarFunctionRole.Arn

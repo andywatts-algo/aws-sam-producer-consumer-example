@@ -1,0 +1,21 @@
+{
+	"Comment": "A simple state machine that invokes a producer and then a consumer.",
+	"StartAt": "InvokeProducer",
+	"States": {
+		"InvokeProducer": {
+			"Type": "Task",
+			"Resource": "${ProducerArn}",
+			"Next": "Wait"
+		},
+		"Wait": {
+			"Type": "Wait",
+			"Seconds": 60,
+			"Next": "InvokeConsumer"
+		},
+		"InvokeConsumer": {
+			"Type": "Task",
+			"Resource": "${ConsumerArn}",
+			"End": true
+		}
+	}
+}
