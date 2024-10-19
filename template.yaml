@@ -6,7 +6,6 @@ Resources:
   ProducerConsumerStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-troy
         ProducerArn: !GetAtt Producer.Arn
         ConsumerArn: !GetAtt Consumer.Arn
       Policies:
