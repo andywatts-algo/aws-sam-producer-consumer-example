@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Bots
+Description: Producer and Consumer State Machine
 
 Resources:
-  StateMachine:
+  ProducerConsumerStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      DefinitionSubstitutions:
+troy
         ProducerArn: !GetAtt Producer.Arn
         ConsumerArn: !GetAtt Consumer.Arn
       Policies:
@@ -35,7 +35,7 @@ Resources:
 Outputs:
   StateMachineArn:
     Description: State Machine ARN
-    Value: !GetAtt StateMachine.Arn
+    Value: !GetAtt ProducerConsumerStateMachine.Arn
   ConsumerArn:
     Description: Consumer ARN
     Value: !GetAtt Consumer.Arn

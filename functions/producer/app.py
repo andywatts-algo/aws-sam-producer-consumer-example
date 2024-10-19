@@ -1,10 +1,10 @@
 import json
 
 def lambda_handler(event, context):
+    print("Received event:", event)
+
     # Generate a message
     message = {"data": "Hello from Producer!"}
+    print("Output:", message)
     
-    # Log the message
-    print("Produced message:", message)
-    
-    return json.dumps(message)
+    return message

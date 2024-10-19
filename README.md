@@ -1,19 +1,16 @@
-Functions
-ExampleFunction
+# Step Function Producer/Consumer Example
+### Lambdas
+* [Producer](functions/producer/app.py)
+* [Consumer](functions/consumer/app.py)
 
-OpeningOrderFunction
+### Step Function
+* [statemachine.asl.json](statemachine.asl.json)
 
-OpeningOrderFillFunction
-ProfitTargetOrderFunction
-StopLossOrderFunction
-OptionStratFunction
-
-
+#### Steps
+1. Producer lambda outputs JSON
+2. Consumer lambda receives JSON
 
 
-
-## Examples
-### Producer & Consumer
 #### Running state machine steps locally
 ```
 PRODUCER_OUTPUT=$(sam local invoke Producer)
@@ -28,23 +25,3 @@ sam local invoke Consumer -e <(echo "$CONSUMER_INPUT")
 (.venv) 🍏 algo (main) ✗ sam local invoke Consumer -e <(echo "$CONSUMER_INPUT")
 {"statusCode": 200, "body": "{\"result\": \"Consumer processed: Hello from Producer!\"}"}
 ```
-
-
-# SAM.   Serverless Application Model
-
-### AWS SAM Resources:
-- **`AWS::Serverless::Application`** – Nested SAM/CloudFormation app
-- **`AWS::Serverless::Function`** – Lambda function
-- **`AWS::Serverless::SimpleTable`** – DynamoDB table
-- **`AWS::Serverless::StateMachine`** – Step Functions state machine
-- **`AWS::Serverless::Api`** – API Gateway (REST API)
-- **`AWS::Serverless::HttpApi`** – API Gateway (HTTP API)
-- **`AWS::Serverless::LayerVersion`** – Lambda layer
-- **`AWS::Serverless::Connector`** – Service connection (e.g., Lambda & S3)
-
-### CloudFormation Resources:
-- **`AWS::S3::Bucket`** – S3 bucket
-- **`AWS::DynamoDB::Table`** – DynamoDB table
-- **`AWS::SNS::Topic`** – SNS topic
-- **`AWS::SQS::Queue`** – SQS queue
-- **`AWS::IAM::Role`** – IAM role

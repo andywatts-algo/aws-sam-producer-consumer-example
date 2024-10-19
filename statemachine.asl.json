@@ -9,7 +9,7 @@
 		},
 		"Wait": {
 			"Type": "Wait",
-			"Seconds": 60,
+			"Seconds": 4,
 			"Next": "InvokeConsumer"
 		},
 		"InvokeConsumer": {

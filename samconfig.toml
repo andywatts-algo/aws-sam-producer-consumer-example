@@ -3,7 +3,7 @@
 version = 0.1
 
 [default.global.parameters]
-stack_name = "Bots"
+stack_name = "ProducerConsumerStateMachine"
 
 [default.build.parameters]
 cached = true
@@ -16,7 +16,7 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-s3_prefix = "bots"
+s3_prefix = "producer-consumer-state-machine"
 region = "us-east-2"
 image_repositories = []
 
